@@ -1,76 +1,75 @@
-Backend voice gateway (MVP)
-===========================
+Backend‑gateway (MVP)
+======================
 
-This service is a thin **WebSocket gateway** between the Raspberry Pi browser
-client (`maf_speaker_client`) and the future voice pipeline (wake word, VAD,
-STT, LLM, TTS).
+Этот сервис — тонкий **WebSocket‑gateway** между браузером на Raspberry Pi
+(`maf_speaker_client`) и будущим voice‑pipeline (wake word, VAD, STT, LLM, TTS).
 
-For now it implements an **MVP protocol**:
+Сейчас реализован **MVP‑протокол**:
 
-- accepts `session.start` and binary audio frames from the frontend
-- maintains a simple in‑memory session state
-- sends back fake but well‑formed events:
+- принимает `session.start` и бинарные аудиокадры от фронта;
+- держит простое in‑memory состояние сессии;
+- отправляет обратно корректные по формату события:
   - `wake.detected`
   - `speech.started`
   - `speech.ended`
   - `assistant.processing`
   - `assistant.transcript`
   - `assistant.text`
-  - `assistant.audio` + one binary audio frame
+  - `assistant.audio` + один бинарный аудиофрейм (в тестовом режиме)
   - `error`
   - `debug.pong`
 
-Stack
------
+Стек
+----
 
 - Python 3.10+
 - `asyncio`
-- [`websockets`](https://websockets.readthedocs.io/en/stable/) (low‑level WS server)
+- [`websockets`](https://websockets.readthedocs.io/en/stable/) (низкоуровневый WS‑сервер)
 
-Quickstart
-----------
+Быстрый старт
+-------------
 
-1. Install dependencies (ideally in a virtualenv):
+1. Установка зависимостей (желательно в virtualenv):
 
    ```bash
+   cd backend
+   python -m venv .venv
+   source .venv/bin/activate
    pip install -r requirements.txt
    ```
 
-2. Run the server from the project root:
+2. Запуск сервера из корня проекта:
 
    ```bash
-   cd /home/harbi/Work/MAF
-   python -m backend.main
+   cd /home/harbi/Work/MAF   # или корень репозитория
+   source backend/.venv/bin/activate
+   BACKEND_PORT=8082 python -m backend.main
    ```
 
-3. Point the frontend to this server by setting:
+   По умолчанию сервер слушает `ws://0.0.0.0:8082/ws/voice`.
+
+3. (Опционально) тестовый echo‑режим:
 
    ```bash
-   export NEXT_PUBLIC_WS_URL="ws://localhost:8080/ws/voice"
+   ECHO_TEST_MODE=1 BACKEND_PORT=8082 python -m backend.main
    ```
 
-   Then run `maf_speaker_client` as usual.
+   В этом режиме backend записывает несколько секунд аудио и возвращает его
+   обратно как WAV — удобно, чтобы проверить путь аудио.
 
-Project layout
---------------
+Структура backend
+-----------------
 
 ```text
 backend/
-  main.py          # Entry point, starts WS server
-  ws_server.py     # WebSocket accept loop and per-connection handler
-  session.py       # In-memory session object and simple state machine
-  protocol.py      # JSON event types and binary audio frame codec
-  config.py        # Ports, hosts, timing constants
+  main.py          # Точка входа, запускает WS‑сервер
+  ws_server.py     # Цикл приёма WebSocket‑подключений и хендлер
+  session.py       # Объект сессии и простая стейт‑машина
+  protocol.py      # Типы JSON‑событий и кодек бинарного аудиофрейма
+  config.py        # Порты, хост, флаги тестовых режимов
+  requirements.txt # Python‑зависимости
 ```
 
-Later we can add:
-
-```text
-  wakeword.py
-  vad.py
-  stt.py
-  llm.py
-  tts.py
-  audio_buffer.py
-```
+В `backend/voice_pipeline/` живёт код Роли 2 (Voice / AI). Контракт и API для
+него описаны в корневом `README.md`.
 
