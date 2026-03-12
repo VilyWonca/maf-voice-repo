@@ -1,4 +1,8 @@
 __pycache__/
 *.pyc
 .venv/
+maf_speaker_client/
+front/
+"Описание проекта"/
+
 
